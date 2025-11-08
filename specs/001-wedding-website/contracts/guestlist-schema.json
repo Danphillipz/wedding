@@ -1,0 +1,175 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Wedding Website Data Contracts",
+  "description": "TypeScript interfaces and JSON schemas for the wedding website guestlist data",
+  "definitions": {
+    "Guest": {
+      "type": "object",
+      "description": "Represents an invited wedding guest",
+      "required": ["id", "name", "email", "postalCode"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier (UUID v4)",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name as it appears on invitation",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address for disambiguation",
+          "format": "email"
+        },
+        "postalCode": {
+          "type": "string",
+          "description": "UK postal code for disambiguation",
+          "pattern": "^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Guestlist": {
+      "type": "object",
+      "description": "Collection of all invited guests",
+      "required": ["guests"],
+      "properties": {
+        "guests": {
+          "type": "array",
+          "description": "Array of all invited guests",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/Guest"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "SearchStatus": {
+      "type": "string",
+      "description": "Result status of a guestlist search",
+      "enum": ["found", "not-found", "multiple-matches", "deadline-passed"]
+    },
+    "SearchResult": {
+      "type": "object",
+      "description": "Result of a guestlist search operation",
+      "required": ["status", "message"],
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/SearchStatus"
+        },
+        "guest": {
+          "$ref": "#/definitions/Guest",
+          "description": "Matched guest (if status is 'found')"
+        },
+        "matches": {
+          "type": "array",
+          "description": "Multiple matching guests (if status is 'multiple-matches')",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/definitions/Guest"
+          }
+        },
+        "message": {
+          "type": "string",
+          "description": "User-friendly message to display",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "VenueAddress": {
+      "type": "object",
+      "description": "Physical address of the wedding venue",
+      "required": ["line1", "city", "postalCode", "country"],
+      "properties": {
+        "line1": {
+          "type": "string",
+          "minLength": 1
+        },
+        "line2": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string",
+          "minLength": 1
+        },
+        "postalCode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "country": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "VenueCoordinates": {
+      "type": "object",
+      "description": "Geographic coordinates of the venue",
+      "required": ["lat", "lng"],
+      "properties": {
+        "lat": {
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lng": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        }
+      },
+      "additionalProperties": false
+    },
+    "VenueInfo": {
+      "type": "object",
+      "description": "Information about the wedding venue",
+      "required": ["name", "address"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "address": {
+          "$ref": "#/definitions/VenueAddress"
+        },
+        "coordinates": {
+          "$ref": "#/definitions/VenueCoordinates"
+        }
+      },
+      "additionalProperties": false
+    },
+    "WeddingDetails": {
+      "type": "object",
+      "description": "Static information about the wedding event",
+      "required": ["date", "venue", "rsvpDeadline"],
+      "properties": {
+        "date": {
+          "type": "string",
+          "description": "Wedding date in ISO 8601 format",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "venue": {
+          "$ref": "#/definitions/VenueInfo"
+        },
+        "rsvpDeadline": {
+          "type": "string",
+          "description": "RSVP deadline date in ISO 8601 format",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "type": "object",
+  "properties": {
+    "guestlist": {
+      "$ref": "#/definitions/Guestlist"
+    }
+  }
+}

@@ -22,9 +22,10 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
+  reporter: [['html', { open: 'never' }]],
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npx nx run @dna/wedding:start',
+    command: 'npx nx run @dna/wedding:dev',
     url: 'http://localhost:3000',
     reuseExistingServer: true,
     cwd: workspaceRoot,

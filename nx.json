@@ -40,7 +40,8 @@
         "serveStaticTargetName": "serve-static",
         "buildDepsTargetName": "build-deps",
         "watchDepsTargetName": "watch-deps"
-      }
+      },
+      "include": ["apps/wedding/**/*"]
     },
     {
       "plugin": "@nx/playwright/plugin",

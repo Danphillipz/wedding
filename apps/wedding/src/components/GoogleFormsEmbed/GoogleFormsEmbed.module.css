@@ -1,0 +1,28 @@
+.embedContainer {
+  width: 100%;
+  max-width: 800px;
+  margin: var(--spacing-xl) auto 0;
+}
+
+.iframe {
+  min-height: 600px;
+  height: 100vh;
+  max-height: 800px;
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile: reduce max-height */
+@media (max-width: 767px) {
+  .iframe {
+    min-height: 500px;
+    max-height: 700px;
+  }
+}
+
+/* Tablet and above */
+@media (min-width: 768px) {
+  .embedContainer {
+    margin-top: var(--spacing-2xl);
+  }
+}

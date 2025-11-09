@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { searchGuest, guestlist } from '@/lib/guestlist';
+import { searchGuest } from '@/lib/guestlist';
 import { isBeforeDeadline } from '@/lib/deadline';
-import type { Guest, SearchResult } from '@/types';
+import { decryptGuestlist } from '@/lib/crypto';
+import type { Guest, SearchResult, Guestlist } from '@/types';
 import styles from './GuestSearch.module.css';
+import encryptedData from '@/data/guestlist.encrypted.json';
 
 interface GuestSearchProps {
   onGuestFound: (guest: Guest) => void;
@@ -14,13 +16,36 @@ export default function GuestSearch({ onGuestFound }: GuestSearchProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [postalCode, setPostalCode] = useState('');
+  const [password, setPassword] = useState('');
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [guestlist, setGuestlist] = useState<Guestlist | null>(null);
+  const [unlockError, setUnlockError] = useState('');
+
+  const handleUnlock = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setUnlockError('');
+
+    try {
+      const decrypted = await decryptGuestlist(encryptedData, password);
+      const data = JSON.parse(decrypted) as Guestlist;
+      setGuestlist(data);
+      setIsUnlocked(true);
+    } catch {
+      setUnlockError(
+        'Incorrect password. Please contact Amy and Dan if you need assistance.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim()) {
+    if (!name.trim() || !guestlist) {
       return;
     }
 
@@ -53,6 +78,47 @@ export default function GuestSearch({ onGuestFound }: GuestSearchProps) {
       onGuestFound(result.guest);
     }
   };
+
+  if (!isUnlocked) {
+    return (
+      <div className={styles.guestSearch}>
+        <form onSubmit={handleUnlock} className={styles.form}>
+          <div className={styles.unlockMessage}>
+            <p>
+              To protect guest privacy, please enter the access code provided in
+              your invitation.
+            </p>
+          </div>
+
+          <div className={styles.formGroup}>
+            <label htmlFor="password" className={styles.label}>
+              Access Code
+            </label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={styles.input}
+              placeholder="Enter access code"
+              required
+              autoComplete="off"
+            />
+          </div>
+
+          {unlockError && (
+            <div className={styles.error} data-testid="unlock-error">
+              <p>{unlockError}</p>
+            </div>
+          )}
+
+          <button type="submit" className={styles.button} disabled={isLoading}>
+            {isLoading ? 'Unlocking...' : 'Unlock RSVP'}
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.guestSearch}>

@@ -2,12 +2,36 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import GuestSearch from './GuestSearch';
 import type { SearchResult } from '../../types';
 
-// Mock the guestlist module
+// Mock the modules
 jest.mock('../../lib/guestlist');
+jest.mock('../../lib/crypto');
+jest.mock('../../data/guestlist.encrypted.json', () => ({
+  encrypted: 'mock-encrypted-data',
+  version: 1,
+}));
 
 import * as guestlistModule from '../../lib/guestlist';
+import * as cryptoModule from '../../lib/crypto';
 
 const mockSearchGuest = jest.spyOn(guestlistModule, 'searchGuest');
+const mockDecryptGuestlist = jest.spyOn(cryptoModule, 'decryptGuestlist');
+
+// Helper to unlock with correct password
+async function unlockGuestSearch() {
+  const passwordInput = screen.getByLabelText(/access code/i);
+  const unlockButton = screen.getByRole('button', { name: /unlock rsvp/i });
+
+  mockDecryptGuestlist.mockResolvedValue(
+    JSON.stringify({ guests: [] })
+  );
+
+  fireEvent.change(passwordInput, { target: { value: 'July2nd2026' } });
+  fireEvent.click(unlockButton);
+
+  await waitFor(() => {
+    expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
+  });
+}
 
 describe('GuestSearch', () => {
   const mockOnGuestFound = jest.fn();
@@ -16,8 +40,38 @@ describe('GuestSearch', () => {
     jest.clearAllMocks();
   });
 
-  it('should render search input and submit button', () => {
+  it('should render unlock screen initially', () => {
     render(<GuestSearch onGuestFound={mockOnGuestFound} />);
+
+    expect(screen.getByLabelText(/access code/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /unlock rsvp/i })).toBeInTheDocument();
+    expect(screen.getByText(/to protect guest privacy/i)).toBeInTheDocument();
+  });
+
+  it('should show error for incorrect password', async () => {
+    mockDecryptGuestlist.mockRejectedValue(new Error('Decryption failed'));
+
+    render(<GuestSearch onGuestFound={mockOnGuestFound} />);
+
+    const passwordInput = screen.getByLabelText(/access code/i);
+    const unlockButton = screen.getByRole('button', { name: /unlock rsvp/i });
+
+    fireEvent.change(passwordInput, { target: { value: 'WrongPassword' } });
+    fireEvent.click(unlockButton);
+
+    await waitFor(() => {
+      expect(screen.getByText(/incorrect password/i)).toBeInTheDocument();
+    });
+  });
+
+  it('should unlock and show search form with correct password', async () => {
+    mockDecryptGuestlist.mockResolvedValue(
+      JSON.stringify({ guests: [] })
+    );
+
+    render(<GuestSearch onGuestFound={mockOnGuestFound} />);
+
+    await unlockGuestSearch();
 
     expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /search/i })).toBeInTheDocument();
@@ -38,6 +92,7 @@ describe('GuestSearch', () => {
     mockSearchGuest.mockReturnValue(foundResult);
 
     render(<GuestSearch onGuestFound={mockOnGuestFound} />);
+    await unlockGuestSearch();
 
     const input = screen.getByLabelText(/full name/i);
     const submitButton = screen.getByRole('button', { name: /search/i });
@@ -61,6 +116,7 @@ describe('GuestSearch', () => {
     mockSearchGuest.mockReturnValue(notFoundResult);
 
     render(<GuestSearch onGuestFound={mockOnGuestFound} />);
+    await unlockGuestSearch();
 
     const input = screen.getByLabelText(/full name/i);
     const submitButton = screen.getByRole('button', { name: /search/i });
@@ -98,6 +154,7 @@ describe('GuestSearch', () => {
     mockSearchGuest.mockReturnValue(multipleMatchesResult);
 
     render(<GuestSearch onGuestFound={mockOnGuestFound} />);
+    await unlockGuestSearch();
 
     const input = screen.getByLabelText(/full name/i);
     const submitButton = screen.getByRole('button', { name: /search/i });
@@ -150,6 +207,7 @@ describe('GuestSearch', () => {
       .mockReturnValueOnce(foundResult);
 
     render(<GuestSearch onGuestFound={mockOnGuestFound} />);
+    await unlockGuestSearch();
 
     const nameInput = screen.getByLabelText(/full name/i);
     const submitButton = screen.getByRole('button', { name: /search/i });
@@ -187,6 +245,7 @@ describe('GuestSearch', () => {
     mockSearchGuest.mockReturnValue(deadlinePassedResult);
 
     render(<GuestSearch onGuestFound={mockOnGuestFound} />);
+    await unlockGuestSearch();
 
     const input = screen.getByLabelText(/full name/i);
     const submitButton = screen.getByRole('button', { name: /search/i });
@@ -203,8 +262,9 @@ describe('GuestSearch', () => {
     expect(mockOnGuestFound).not.toHaveBeenCalled();
   });
 
-  it('should require name input before searching', () => {
+  it('should require name input before searching', async () => {
     render(<GuestSearch onGuestFound={mockOnGuestFound} />);
+    await unlockGuestSearch();
 
     const submitButton = screen.getByRole('button', { name: /search/i });
 

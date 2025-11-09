@@ -4,6 +4,22 @@
   margin: 0 auto;
 }
 
+.unlockMessage {
+  padding: var(--spacing-md);
+  background-color: var(--color-neutral-100);
+  border-left: 4px solid var(--color-primary);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.unlockMessage p {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
 .form {
   display: flex;
   flex-direction: column;

@@ -15,11 +15,12 @@ describe('RSVP Page', () => {
     expect(screen.getByRole('heading', { name: /rsvp/i })).toBeInTheDocument();
   });
 
-  it('should display GuestSearch component', () => {
+  it('should display GuestSearch component with unlock screen', () => {
     render(<RsvpPage />);
 
-    expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /search/i })).toBeInTheDocument();
+    // Should show unlock screen initially
+    expect(screen.getByLabelText(/access code/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /unlock rsvp/i })).toBeInTheDocument();
   });
 
   it('should show deadline information when before deadline', () => {

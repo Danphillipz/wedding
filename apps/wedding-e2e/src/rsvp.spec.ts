@@ -1,8 +1,63 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
+
+// Helper function to unlock the RSVP form with the access code
+async function unlockRSVP(page: Page) {
+  // Check if unlock screen is present
+  const unlockButton = page.getByRole('button', { name: /unlock rsvp/i });
+  const unlockVisible = await unlockButton.isVisible().catch(() => false);
+  
+  if (unlockVisible) {
+    const passwordInput = page.getByLabel(/access code/i);
+    await passwordInput.fill('July2nd2026');
+    await unlockButton.click();
+    
+    // Wait for the search form to appear
+    await page.getByRole('button', { name: /search/i }).waitFor({ state: 'visible' });
+  }
+}
 
 test.describe('RSVP Page E2E', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/rsvp');
+    await unlockRSVP(page);
+  });
+
+  test('should require access code to unlock RSVP form', async ({ page }) => {
+    // Navigate without unlocking
+    await page.goto('/rsvp');
+    
+    // Should show unlock screen
+    await expect(page.getByLabel(/access code/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /unlock rsvp/i })).toBeVisible();
+    await expect(page.getByText(/to protect guest privacy/i)).toBeVisible();
+  });
+
+  test('should reject incorrect access code', async ({ page }) => {
+    await page.goto('/rsvp');
+    
+    const passwordInput = page.getByLabel(/access code/i);
+    const unlockButton = page.getByRole('button', { name: /unlock rsvp/i });
+    
+    await passwordInput.fill('WrongPassword');
+    await unlockButton.click();
+    
+    // Should show error message
+    await expect(page.getByTestId('unlock-error')).toBeVisible();
+    await expect(page.getByText(/incorrect password/i)).toBeVisible();
+  });
+
+  test('should unlock with correct access code', async ({ page }) => {
+    await page.goto('/rsvp');
+    
+    const passwordInput = page.getByLabel(/access code/i);
+    const unlockButton = page.getByRole('button', { name: /unlock rsvp/i });
+    
+    await passwordInput.fill('July2nd2026');
+    await unlockButton.click();
+    
+    // Should show search form
+    await expect(page.getByLabel(/full name/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /search/i })).toBeVisible();
   });
 
   test('should load RSVP page successfully', async ({ page }) => {

@@ -14,6 +14,9 @@ const nextConfig = {
   // Configure for static export (GitHub Pages)
   output: 'export',
   
+  // Set base path for GitHub Pages deployment to /wedding
+  basePath: '/wedding',
+  
   // Disable image optimization for static export
   images: {
     unoptimized: true,
